@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── OpenRouter (Qwen) ──────────────────────────────────────────
-OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "qwen/qwen3-coder:free")
 LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "2048"))
