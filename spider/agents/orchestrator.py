@@ -44,7 +44,10 @@ def _rule_based_decision(state: SpiderState) -> dict:
         return {"next": "recon", "reason": "No port data — must scan first (rule-based fallback)"}
 
     if not state["findings"]:
-        return {"next": "enumerate", "reason": "Ports found but no findings — enumerate services (rule-based fallback)"}
+        # Check if we already tried enumerating
+        has_enumerated = any("Enum:" in chain for chain in state.get("attack_chain", []))
+        if not has_enumerated:
+            return {"next": "enumerate", "reason": "Ports found but no findings — enumerate services (rule-based fallback)"}
 
     # Check for critical/high findings
     critical_findings = [

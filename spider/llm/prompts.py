@@ -56,10 +56,7 @@ Each finding must be:
 }
 
 Focus on: outdated versions, misconfigurations, known CVEs, anonymous access, weak creds, backdoors.
-VSFTPD 2.3.4 = CVE-2011-2523 (critical, CVSS 10.0).
-Samba usermap_script = CVE-2007-2447 (critical, CVSS 9.3).
-PHP CGI arg injection = CVE-2012-1823 (critical, CVSS 7.5).
-distcc exec = CVE-2004-2687 (high, CVSS 6.8).
+If you recognize software names and versions, map them to known CVEs and estimate their CVSS severity.
 """.strip()
 
 ENUM_INTERPRETATION_USER_PROMPT = """
