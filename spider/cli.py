@@ -71,10 +71,11 @@ def _check_tools() -> list[dict]:
 
 
 def _check_api_key() -> dict:
-    from spider.config import TOGETHER_API_KEY
-    if TOGETHER_API_KEY and len(TOGETHER_API_KEY) > 10:
-        return {"name": "Together AI API key", "status": True, "note": f"...{TOGETHER_API_KEY[-6:]}"}
-    return {"name": "Together AI API key", "status": False, "note": "Set TOGETHER_API_KEY in .env"}
+    from spider.config import OPENROUTER_API_KEY
+    if OPENROUTER_API_KEY and len(OPENROUTER_API_KEY) > 10:
+        return {"name": "OpenRouter API key", "status": True, "note": f"...{OPENROUTER_API_KEY[-6:]}"}
+    return {"name": "OpenRouter API key", "status": False, "note": "Set OPENROUTER_API_KEY in .env"}
+
 
 
 def _check_msfrpcd() -> dict:
@@ -135,6 +136,81 @@ def main():
 
 
 @main.command()
+def setup():
+    """Interactive setup to configure SPIDER (creates .env)."""
+    render_banner(version=SPIDER_VERSION)
+    click.secho("--- SPIDER Setup ---", fg="cyan", bold=True)
+    click.echo("This will configure your local .env file.\n")
+    
+    env_path = Path(".env")
+    if env_path.exists():
+        if not click.confirm(".env already exists. Do you want to overwrite it?"):
+            click.echo("Setup aborted.")
+            sys.exit(0)
+            
+    api_key = click.prompt("1. Enter your OpenRouter API Key", hide_input=True)
+    
+    # Defaults
+    content = [
+        f'OPENROUTER_API_KEY="{api_key}"',
+        'OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"',
+        'OPENROUTER_MODEL="qwen/qwen-3-coder-480b-a35b"',
+        'LLM_MAX_TOKENS="2048"',
+        '',
+        'SPIDER_DB_PATH="./spider_state.db"',
+        'REPORT_DIR="./reports"',
+        'LOG_DIR="./logs"',
+        '',
+        '# Metasploit RPC',
+        'MSF_RPC_HOST="127.0.0.1"',
+        'MSF_RPC_PORT="55553"',
+        'MSF_RPC_PASSWORD="yourmsfrpcpassword"'
+    ]
+    
+    try:
+        env_path.write_text("\n".join(content) + "\n")
+        log_action("system", ".env file successfully generated!", "success")
+        click.echo("To configure Metasploit MSF RPC, edit .env manually.")
+    except Exception as e:
+        render_error("Setup Error", f"Failed to write .env: {e}")
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("prompt", nargs=-1, required=True)
+def ask(prompt: tuple):
+    """Ask SPIDER a general cybersecurity question or task."""
+    render_banner(version=SPIDER_VERSION)
+    from spider.config import OPENROUTER_API_KEY
+    if not OPENROUTER_API_KEY:
+        render_error(
+            "API Key Missing",
+            "OPENROUTER_API_KEY not found in .env",
+            fix="Run 'spider setup' to configure your environment.",
+        )
+        sys.exit(1)
+
+    question = " ".join(prompt)
+    log_action("llm", "Waiting for SPIDER's response...", "info")
+    
+    system_prompt = (
+        "You are SPIDER, a highly experienced ethical hacking assistant. "
+        "Answer the user's questions clearly, concisely, and accurately, "
+        "providing scripts, commands, or explanations as needed for authorized penetration testing."
+    )
+    
+    from spider.llm.client import call_qwen
+    from rich.markdown import Markdown
+    from spider.ui.display import _console
+    
+    try:
+        response = call_qwen(system_prompt, question, temperature=0.7)
+        _console.print(Panel(Markdown(response), title="SPIDER Response", border_style="cyan"))
+    except Exception as e:
+        render_error("API Error", f"Failed to get response from LLM: {str(e)}")
+
+
+@main.command()
 @click.option(
     "--target", "-t",
     required=True,
@@ -175,8 +251,8 @@ def run(target: str, start_from: str, skip_preflight: bool):
         if api_check and not api_check["status"]:
             render_error(
                 "API Key Missing",
-                "TOGETHER_API_KEY not found in .env",
-                fix="Copy .env.example to .env and fill in your Together AI key",
+                "OPENROUTER_API_KEY not found in .env",
+                fix="Run 'spider setup' to configure your OpenRouter key",
             )
             sys.exit(1)
 

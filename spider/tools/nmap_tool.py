@@ -91,14 +91,14 @@ def run_nmap(
                 for svc in host.services:
                     if svc.state in ("open", "open|filtered"):
                         port_dict = {
-                            "port": svc.port,
-                            "protocol": svc.protocol or "tcp",
-                            "state": svc.state,
-                            "service": svc.service or "",
-                            "version": svc.banner or "",
-                            "product": svc.product or "",
-                            "extra_info": svc.extrainfo or "",
-                            "banner": svc.banner or "",
+                            "port": getattr(svc, "port", 0),
+                            "protocol": getattr(svc, "protocol", "") or "tcp",
+                            "state": getattr(svc, "state", ""),
+                            "service": getattr(svc, "service", "") or "",
+                            "version": getattr(svc, "banner", "") or "",
+                            "product": getattr(svc, "product", "") or "",
+                            "extra_info": getattr(svc, "extrainfo", "") or "",
+                            "banner": getattr(svc, "banner", "") or "",
                         }
                         ports_found.append(port_dict)
 

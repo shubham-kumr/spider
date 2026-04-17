@@ -64,11 +64,14 @@ def render_banner(target_ip: str = "", version: str = "1.0.0") -> None:
         print(f"SPIDER v{version} | Target: {target_ip}")
         return
 
-    # ASCII-safe art (avoids Unicode box-drawing that breaks cp1252 on older Windows consoles)
+    # Beautiful ASCII Art from README
     banner_text = Text()
-    banner_text.append("  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n", style="bold red")
-    banner_text.append("  |  S  P  I  D  E  R                      |\n", style="bold red")
-    banner_text.append("  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n", style="bold red")
+    banner_text.append("  ███████╗██████╗ ██╗██████╗ ███████╗██████╗\n", style="bold red")
+    banner_text.append("  ██╔════╝██╔══██╗██║██╔══██╗██╔════╝██╔══██╗\n", style="bold red")
+    banner_text.append("  ███████╗██████╔╝██║██║  ██║█████╗  ██████╔╝\n", style="bold red")
+    banner_text.append("  ╚════██║██╔═══╝ ██║██║  ██║██╔══╝  ██╔══██╗\n", style="bold red")
+    banner_text.append("  ███████║██║     ██║██████╔╝███████╗██║  ██║\n", style="bold red")
+    banner_text.append("  ╚══════╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝\n", style="bold red")
     banner_text.append(
         "\n  System for Penetration Testing, Intelligence, Discovery, Exploit & Recon\n",
         style="dim white",

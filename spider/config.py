@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Together AI (Qwen) ──────────────────────────────────────────
-TOGETHER_API_KEY: str = os.getenv("TOGETHER_API_KEY", "")
-TOGETHER_BASE_URL: str = os.getenv("TOGETHER_BASE_URL", "https://api.together.xyz/v1")
-TOGETHER_MODEL: str = os.getenv("TOGETHER_MODEL", "Qwen/Qwen2.5-72B-Instruct-Turbo")
-TOGETHER_MAX_TOKENS: int = int(os.getenv("TOGETHER_MAX_TOKENS", "1024"))
+# ── OpenRouter (Qwen) ──────────────────────────────────────────
+OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "qwen/qwen-3-coder-480b-a35b")
+LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
 # ── Metasploit RPC ───────────────────────────────────────────────
 MSF_RPC_HOST: str = os.getenv("MSF_RPC_HOST", "127.0.0.1")

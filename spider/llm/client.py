@@ -8,14 +8,15 @@ from __future__ import annotations
 import json
 import re
 import time
+import httpx
 
 from openai import OpenAI, RateLimitError
 
 from spider.config import (
-    TOGETHER_API_KEY,
-    TOGETHER_BASE_URL,
-    TOGETHER_MODEL,
-    TOGETHER_MAX_TOKENS,
+    OPENROUTER_API_KEY,
+    OPENROUTER_BASE_URL,
+    OPENROUTER_MODEL,
+    LLM_MAX_TOKENS,
 )
 
 # Lazy singleton — instantiated on first use
@@ -25,7 +26,14 @@ _client: OpenAI | None = None
 def _get_client() -> OpenAI:
     global _client
     if _client is None:
-        _client = OpenAI(api_key=TOGETHER_API_KEY, base_url=TOGETHER_BASE_URL)
+        # Creating a custom httpx.Client bypasses proxy issues
+        # in legacy openai wrappers where 'proxies' kwarg errors occur.
+        http_client = httpx.Client()
+        _client = OpenAI(
+            api_key=OPENROUTER_API_KEY,
+            base_url=OPENROUTER_BASE_URL,
+            http_client=http_client
+        )
     return _client
 
 
@@ -36,16 +44,16 @@ def call_qwen(
     temperature: float = 0.1,
 ) -> str:
     """
-    Call Qwen via Together AI with exponential backoff on rate limits.
+    Call Qwen via OpenRouter AI with exponential backoff on rate limits.
     Returns the raw text response (may be JSON or prose).
     """
-    max_tokens = max_tokens or TOGETHER_MAX_TOKENS
+    max_tokens = max_tokens or LLM_MAX_TOKENS
     client = _get_client()
 
     for attempt in range(4):
         try:
             response = client.chat.completions.create(
-                model=TOGETHER_MODEL,
+                model=OPENROUTER_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
