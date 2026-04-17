@@ -1,15 +1,15 @@
 """
-SPIDER — Terminal UI Display Components
+SPIDER - Terminal UI Display Components
 All Rich-based terminal UI components for SPIDER CLI output.
 Follows the design system defined in FRONTEND_GUIDELINES.md.
 """
 
 from __future__ import annotations
 
+import sys
 from datetime import datetime
 from typing import Optional
 
-from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -18,7 +18,10 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 from spider.config import SPIDER_NO_RICH
 
-_console = Console()
+# legacy_windows=False forces Rich to use ANSI sequences instead of the
+# legacy Win32 console API, bypassing cp1252 encoding errors on Windows.
+_console = Console(force_terminal=True, legacy_windows=False, highlight=False)
+
 
 # ── Color System ──────────────────────────────────────────────────────────────
 
@@ -61,13 +64,11 @@ def render_banner(target_ip: str = "", version: str = "1.0.0") -> None:
         print(f"SPIDER v{version} | Target: {target_ip}")
         return
 
+    # ASCII-safe art (avoids Unicode box-drawing that breaks cp1252 on older Windows consoles)
     banner_text = Text()
-    banner_text.append("  ███████╗██████╗ ██╗██████╗ ███████╗██████╗  \n", style="bold red")
-    banner_text.append("  ██╔════╝██╔══██╗██║██╔══██╗██╔════╝██╔══██╗ \n", style="bold red")
-    banner_text.append("  ███████╗██████╔╝██║██║  ██║█████╗  ██████╔╝ \n", style="bold red")
-    banner_text.append("  ╚════██║██╔═══╝ ██║██║  ██║██╔══╝  ██╔══██╗ \n", style="bold red")
-    banner_text.append("  ███████║██║     ██║██████╔╝███████╗██║  ██║ \n", style="bold red")
-    banner_text.append("  ╚══════╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝ \n", style="bold red")
+    banner_text.append("  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n", style="bold red")
+    banner_text.append("  |  S  P  I  D  E  R                      |\n", style="bold red")
+    banner_text.append("  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n", style="bold red")
     banner_text.append(
         "\n  System for Penetration Testing, Intelligence, Discovery, Exploit & Recon\n",
         style="dim white",
@@ -77,7 +78,12 @@ def render_banner(target_ip: str = "", version: str = "1.0.0") -> None:
     else:
         banner_text.append(f"  Version {version}\n", style="dim white")
 
-    _console.print(Panel(banner_text, border_style="bright_black", padding=(0, 1)))
+    try:
+        _console.print(Panel(banner_text, border_style="bright_black", padding=(0, 1)))
+    except Exception:
+        # Absolute fallback for any encoding issue
+        print(f"\n  [ SPIDER v{version} ] Target: {target_ip}")
+        print("  System for Penetration Testing, Intelligence, Discovery, Exploit & Recon\n")
 
 
 # ── Component 2: Pre-Flight Check Panel ──────────────────────────────────────

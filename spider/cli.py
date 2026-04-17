@@ -1,19 +1,30 @@
 """
-SPIDER — CLI Entry Point
+SPIDER --- CLI Entry Point
 Click-based CLI with run, status, report, preflight, and clean commands.
 """
 
 from __future__ import annotations
 
 import os
-import shutil
 import sys
+
+# Windows UTF-8: set env before any imports that touch stdout
+if sys.platform == "win32":
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    # Switch console code page to UTF-8 (chcp 65001)
+    try:
+        import subprocess as _sp
+        _sp.run("chcp 65001", shell=True, capture_output=True)
+    except Exception:
+        pass
+
+import shutil
 from pathlib import Path
 
 import click
 
 from spider import __version__
-from spider.config import SPIDER_DB_PATH, REPORT_DIR, SPIDER_VERSION
+from spider.config import SPIDER_DB_PATH, SPIDER_VERSION
 from spider.ui.display import (
     render_banner,
     render_preflight,
@@ -22,6 +33,7 @@ from spider.ui.display import (
     render_success_banner,
     log_action,
 )
+
 
 
 # ── Pre-flight check helpers ──────────────────────────────────────────────────

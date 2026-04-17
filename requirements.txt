@@ -1,13 +1,21 @@
-langgraph==0.2.28
-langchain-core==0.3.15
-openai==1.51.0
-sqlalchemy==2.0.36
-pymetasploit3==1.0.3
-rich==13.9.4
-click==8.1.8
-jinja2==3.1.4
-weasyprint==62.3
-requests==2.32.3
-python-dotenv==1.0.1
-pydantic==2.9.2
-python-libnmap==0.7.3
+# Core dependencies — Python 3.11+ / 3.12+ compatible
+langgraph>=0.2.28
+langchain-core>=0.3.15
+openai>=1.51.0
+sqlalchemy>=2.0.36
+rich>=13.9.4
+click>=8.1.8
+jinja2>=3.1.4
+requests>=2.32.3
+python-dotenv>=1.0.1
+pydantic>=2.9.2
+
+# Optional: nmap XML parsing (Linux/Mac — may fail on Windows, graceful fallback built-in)
+# python-libnmap>=0.7.3
+
+# Optional: Metasploit RPC (requires msfrpcd running)
+# pymetasploit3>=1.0.3
+
+# Optional: PDF generation
+# weasyprint>=62.3   # Requires GTK on Windows — skip for now, HTML report still works
+# pycairo           # GTK dep for weasyprint on Windows
