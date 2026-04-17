@@ -1,0 +1,49 @@
+# Secrets — never commit these
+.env
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# SQLite database (contains sensitive pentest data)
+spider_state.db
+*.db
+
+# Generated reports (may contain sensitive findings)
+reports/
+!reports/.gitkeep
+
+# Log files
+logs/
+!logs/.gitkeep
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp nmap output
+/tmp/spider_nmap*.xml
