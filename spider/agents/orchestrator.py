@@ -24,7 +24,6 @@ class SpiderState(TypedDict):
     sessions: list             # Populated by Exploitation Agent
     privesc_vectors: list      # Populated by Post-Exploit Agent
     credentials: list          # Populated by Post-Exploit Agent
-    msfrpcd_available: bool    # Set during pre-flight
     next_agent: str            # Set by Orchestrator
     orchestrator_round: int    # Tracks orchestrator loop count
     orchestrator_reasoning: str  # LLM reasoning text
@@ -55,8 +54,10 @@ def _rule_based_decision(state: SpiderState) -> dict:
         if f.get("severity") in ("critical", "high") and f.get("cve_id")
     ]
 
-    if critical_findings and state["msfrpcd_available"] and not state["sessions"]:
-        return {"next": "exploit", "reason": "Critical CVEs found and msfrpcd available — attempting exploitation (rule-based fallback)"}
+    if critical_findings and not state["sessions"]:
+        has_exploited = any("Exploit:" in chain for chain in state.get("attack_chain", []))
+        if not has_exploited:
+            return {"next": "exploit", "reason": "Critical CVEs found — planning exploitation commands (rule-based fallback)"}
 
     if state["sessions"] and not state["privesc_vectors"]:
         return {"next": "post_exploit", "reason": "Active session exists — escalating privileges (rule-based fallback)"}
@@ -110,7 +111,6 @@ def orchestrator_node(state: SpiderState) -> SpiderState:
         high_count=sev_counts["high"],
         session_count=len(state["sessions"]),
         privesc_count=len(state["privesc_vectors"]),
-        msfrpcd_available=state["msfrpcd_available"],
     )
 
     # ── Call LLM (with rule-based fallback) ─────────────────────
@@ -197,7 +197,6 @@ def build_graph():
 def build_initial_state(
     run_id: int,
     target_ip: str,
-    msfrpcd_available: bool = False,
     start_from: str = "recon",
     existing_ports: list = None,
     existing_findings: list = None,
@@ -213,7 +212,6 @@ def build_initial_state(
         sessions=[],
         privesc_vectors=[],
         credentials=[],
-        msfrpcd_available=msfrpcd_available,
         next_agent=start_from,
         orchestrator_round=0,
         orchestrator_reasoning="",

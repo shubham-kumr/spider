@@ -78,17 +78,7 @@ def _check_api_key() -> dict:
 
 
 
-def _check_msfrpcd() -> dict:
-    from spider.tools.msf_tool import check_msfrpcd
-    from spider.config import MSF_RPC_HOST, MSF_RPC_PORT
-    ok = check_msfrpcd()
-    if ok:
-        return {"name": "msfrpcd", "status": True, "note": f"{MSF_RPC_HOST}:{MSF_RPC_PORT}"}
-    return {
-        "name": "msfrpcd",
-        "status": False,
-        "note": f"Start with: msfrpcd -P <pass> -S -a 127.0.0.1",
-    }
+
 
 
 def _check_target(target_ip: str) -> dict:
@@ -110,11 +100,9 @@ def _run_preflight_checks(target_ip: str = None) -> tuple[list[dict], bool]:
     checks.append(_check_api_key())
     if target_ip:
         checks.append(_check_target(target_ip))
-    msf_check = _check_msfrpcd()
-    checks.append(msf_check)
+    
     all_critical_pass = all(
         c["status"] for c in checks
-        if c["name"] not in ("msfrpcd",)  # msfrpcd optional
     )
     return checks, all_critical_pass
 
@@ -160,17 +148,11 @@ def setup():
         'SPIDER_DB_PATH="./spider_state.db"',
         'REPORT_DIR="./reports"',
         'LOG_DIR="./logs"',
-        '',
-        '# Metasploit RPC',
-        'MSF_RPC_HOST="127.0.0.1"',
-        'MSF_RPC_PORT="55553"',
-        'MSF_RPC_PASSWORD="yourmsfrpcpassword"'
     ]
     
     try:
         env_path.write_text("\n".join(content) + "\n")
         log_action("system", ".env file successfully generated!", "success")
-        click.echo("To configure Metasploit MSF RPC, edit .env manually.")
     except Exception as e:
         render_error("Setup Error", f"Failed to write .env: {e}")
         sys.exit(1)
@@ -265,15 +247,7 @@ def run(target: str, start_from: str, skip_preflight: bool):
                 fix="Ensure VirtualBox host-only or NAT adapter is configured",
             )
             sys.exit(1)
-
-        # Check if msfrpcd is available
-        msf_check = next((c for c in checks if c["name"] == "msfrpcd"), None)
-        msfrpcd_available = msf_check["status"] if msf_check else False
-
-        if not msfrpcd_available:
-            log_action("system", "msfrpcd not available — exploitation phase will be skipped", "warning")
     else:
-        msfrpcd_available = False
         log_action("system", "Pre-flight checks skipped", "warning")
 
     # ── Initialize database and run state ────────────────────────
@@ -304,7 +278,6 @@ def run(target: str, start_from: str, skip_preflight: bool):
     initial_state = build_initial_state(
         run_id=run_id,
         target_ip=target,
-        msfrpcd_available=msfrpcd_available,
         start_from=start_from,
         existing_ports=existing_ports,
         existing_findings=existing_findings,

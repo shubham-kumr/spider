@@ -12,9 +12,9 @@ Your job is to analyze the current state of a pentest engagement and decide whic
 Available agents and when to use them:
 - "recon": Use when open_ports is empty. Must run first.
 - "enumerate": Use when open_ports is populated but findings is empty.
-- "exploit": Use when findings contains critical/high CVEs AND msfrpcd_available is true AND sessions is empty.
+- "exploit": Use when findings contains critical/high CVEs AND sessions is empty.
 - "post_exploit": Use when sessions is non-empty AND privesc_vectors is empty.
-- "report": Use when post_exploit data exists, OR all paths are exhausted, OR msfrpcd_available is false.
+- "report": Use when post_exploit data exists or all paths are exhausted.
 
 Respond ONLY with a valid JSON object. No markdown, no extra text, no code blocks.
 Format: {"next": "<agent_name>", "reason": "<one sentence explanation>"}
@@ -27,7 +27,6 @@ Current engagement state:
 - Findings: {finding_count} ({critical_count} critical, {high_count} high)
 - Active sessions: {session_count}
 - Privesc vectors found: {privesc_count}
-- msfrpcd available: {msfrpcd_available}
 
 What should SPIDER do next?
 """.strip()

@@ -14,11 +14,6 @@ OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.
 OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "qwen/qwen3-coder:free")
 LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
-# ── Metasploit RPC ───────────────────────────────────────────────
-MSF_RPC_HOST: str = os.getenv("MSF_RPC_HOST", "127.0.0.1")
-MSF_RPC_PORT: int = int(os.getenv("MSF_RPC_PORT", "55553"))
-MSF_RPC_PASSWORD: str = os.getenv("MSF_RPC_PASSWORD", "")
-MSF_RPC_SSL: bool = os.getenv("MSF_RPC_SSL", "true").lower() == "true"
 
 # ── SQLite ───────────────────────────────────────────────────────
 SPIDER_DB_PATH: str = os.getenv("SPIDER_DB_PATH", "./spider_state.db")
