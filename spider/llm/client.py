@@ -32,7 +32,11 @@ def _get_client() -> OpenAI:
         _client = OpenAI(
             api_key=OPENROUTER_API_KEY,
             base_url=OPENROUTER_BASE_URL,
-            http_client=http_client
+            http_client=http_client,
+            default_headers={
+                "HTTP-Referer": "https://github.com/spider-framework/spider",
+                "X-OpenRouter-Title": "SPIDER Pentest Framework"
+            }
         )
     return _client
 

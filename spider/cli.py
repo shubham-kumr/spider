@@ -154,7 +154,7 @@ def setup():
     content = [
         f'OPENROUTER_API_KEY="{api_key}"',
         'OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"',
-        'OPENROUTER_MODEL="qwen/qwen-2.5-coder-32b-instruct"',
+        'OPENROUTER_MODEL="qwen/qwen3-coder:free"',
         'LLM_MAX_TOKENS="2048"',
         '',
         'SPIDER_DB_PATH="./spider_state.db"',
