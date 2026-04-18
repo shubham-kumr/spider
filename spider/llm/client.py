@@ -57,13 +57,21 @@ def call_qwen(
 ) -> str:
     """
     POST to OpenRouter using requests with an explicit Authorization header.
-    Retries up to 4 times with exponential backoff on 429 rate-limit responses.
+    Tests primary model, backs off on 429, and cleanly falls back to a secondary
+    model if persistent rate limits are encountered.
     """
     session = _get_session()
     max_tokens = max_tokens or LLM_MAX_TOKENS
 
+    models_to_try = []
+    if OPENROUTER_MODEL not in models_to_try:
+        models_to_try.append(OPENROUTER_MODEL)
+    
+    fallback = "qwen/qwen3-next-80b-a3b-instruct:free"
+    if fallback not in models_to_try:
+        models_to_try.append(fallback)
+
     payload = {
-        "model": OPENROUTER_MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": user_prompt},
@@ -72,36 +80,58 @@ def call_qwen(
         "temperature": temperature,
     }
 
-    for attempt in range(5):
-        try:
-            resp = session.post(
-                _OPENROUTER_ENDPOINT,
-                json=payload,
-                timeout=120,
-            )
+    last_error = None
 
-            if resp.status_code == 429:
-                wait_time = 10 * (2 ** attempt)  # 10s, 20s, 40s, 80s
-                print(f"[!] Rate limit hit (429). Waiting {wait_time}s before retry {attempt + 1}/4...")
-                time.sleep(wait_time)
-                continue
+    for model_name in models_to_try:
+        payload["model"] = model_name
+        print(f"[LLM] Attempting request with model: {model_name}")
 
-            if resp.status_code != 200:
-                # Dump actual request headers for debugging
-                print(f"[DEBUG] Request headers sent: { {k: (v[:20]+'...' if len(v)>20 else v) for k,v in resp.request.headers.items()} }")
-                raise RuntimeError(f"OpenRouter error {resp.status_code}: {resp.text}")
+        for attempt in range(4):
+            try:
+                resp = session.post(
+                    _OPENROUTER_ENDPOINT,
+                    json=payload,
+                    timeout=120,
+                )
 
-            data = resp.json()
-            return data["choices"][0]["message"]["content"].strip()
+                if resp.status_code == 429:
+                    try:
+                        err_msg = resp.json().get("error", {}).get("message", resp.text)
+                    except Exception:
+                        err_msg = resp.text
+                        
+                    last_error = f"429 Rate Limit: {err_msg}"
+                    if attempt < 3:
+                        wait_time = 10 * (2 ** attempt)  # 10s, 20s, 40s
+                        print(f"[!] Rate limit hit (429) on {model_name}: {err_msg}")
+                        print(f"[!] Waiting {wait_time}s before retry {attempt + 1}/3...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        print(f"[!] Exhausted retries for {model_name}. Falling back...")
+                        break  # Break inner loop to try next model
 
-        except requests.exceptions.Timeout:
-            if attempt < 4:
-                print(f"[!] Request timed out. Retrying ({attempt + 1}/4)...")
-                time.sleep(5)
-                continue
-            raise
+                if resp.status_code != 200:
+                    # Dump actual request headers for debugging
+                    print(f"[DEBUG] Request headers sent: { {k: (v[:20]+'...' if len(v)>20 else v) for k,v in resp.request.headers.items()} }")
+                    last_error = f"HTTP {resp.status_code}: {resp.text}"
+                    print(f"[!] API Error on {model_name}: {last_error}")
+                    break  # Break inner loop on hard 4xx/5xx errors
 
-    raise RuntimeError("LLM call failed after 5 retries")
+                data = resp.json()
+                return data["choices"][0]["message"]["content"].strip()
+
+            except requests.exceptions.Timeout:
+                last_error = "Timeout"
+                if attempt < 3:
+                    print(f"[!] Request timed out on {model_name}. Retrying ({attempt + 1}/3)...")
+                    time.sleep(5)
+                    continue
+                else:
+                    print(f"[!] Exhausted timeouts for {model_name}. Falling back...")
+                    break  # Break inner loop
+
+    raise RuntimeError(f"LLM call failed for all models. Last error: {last_error}")
 
 
 def call_qwen_json(
