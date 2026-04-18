@@ -113,7 +113,7 @@ def _run_preflight_checks(target_ip: str = None) -> tuple[list[dict], bool]:
 @click.version_option(version=SPIDER_VERSION, prog_name="spider")
 def main():
     """
-    SPIDER — System for Penetration Testing, Intelligence, Discovery, Exploit & Recon
+    SPIDER — System for Pentesting, Initial Discovery, Exploitation & Reconnaissance
 
     An AI-driven multi-agent offensive security framework for controlled lab environments.
 

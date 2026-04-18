@@ -1,5 +1,5 @@
 """
-SPIDER — System for Penetration Testing, Intelligence, Discovery, Exploit & Recon
+SPIDER — System for Pentesting, Initial Discovery, Exploitation & Reconnaissance
 An AI-driven multi-agent offensive security framework for controlled lab environments.
 """
 

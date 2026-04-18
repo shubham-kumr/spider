@@ -73,7 +73,7 @@ def render_banner(target_ip: str = "", version: str = "1.0.0") -> None:
     banner_text.append("  ███████║██║     ██║██████╔╝███████╗██║  ██║\n", style="bold red")
     banner_text.append("  ╚══════╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝\n", style="bold red")
     banner_text.append(
-        "\n  System for Penetration Testing, Intelligence, Discovery, Exploit & Recon\n",
+        "\n  System for Pentesting, Initial Discovery, Exploitation & Reconnaissance\n",
         style="dim white",
     )
     if target_ip:
@@ -86,7 +86,7 @@ def render_banner(target_ip: str = "", version: str = "1.0.0") -> None:
     except Exception:
         # Absolute fallback for any encoding issue
         print(f"\n  [ SPIDER v{version} ] Target: {target_ip}")
-        print("  System for Penetration Testing, Intelligence, Discovery, Exploit & Recon\n")
+        print("  System for Pentesting, Initial Discovery, Exploitation & Reconnaissance\n")
 
 
 # ── Component 2: Pre-Flight Check Panel ──────────────────────────────────────

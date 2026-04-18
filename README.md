@@ -1,8 +1,6 @@
 # SPIDER 🕷️
 
-**System for Penetration Testing, Intelligence, Discovery, Exploit & Recon**
-
-> ⚠️ **ETHICAL USE ONLY** — SPIDER is designed exclusively for controlled lab environments and authorized penetration testing. See [DISCLAIMER.md](DISCLAIMER.md). Never use against systems you don't own or have explicit permission to test.
+**System for Pentesting, Initial Discovery, Exploitation & Reconnaissance**
 
 ---
 
@@ -34,7 +32,7 @@ SPIDER is an **AI-driven multi-agent offensive security framework** that automat
         │                         └──────────────────────┘
         ├─── enumerate ──► [Enum Agent]      (nikto, gobuster, enum4linux)
         │                         └──────────────────────┘
-        ├─── exploit ────► [Exploit Agent]   (pymetasploit3 → msfrpcd)
+        ├─── exploit ────► [Exploit Agent]   (Manual Command Generation)
         │                         └──────────────────────┘
         ├─── post_exploit► [Post-Exploit]    (linpeas, GTFOBins)
         │                         └──────────────────────┘
@@ -52,7 +50,7 @@ SPIDER is an **AI-driven multi-agent offensive security framework** that automat
 - **Python**: 3.11+
 - **Tools in PATH**:
   ```bash
-  sudo apt install nmap gobuster nikto enum4linux metasploit-framework
+  sudo apt install nmap gobuster nikto enum4linux
   ```
 - **System libs** (for PDF generation):
   ```bash
@@ -64,13 +62,9 @@ SPIDER is an **AI-driven multi-agent offensive security framework** that automat
   - Get your API key from the dashboard
   - Free tier usage includes strict rate limits (up to 8 requests/min), which SPIDER automatically handles with retry logic.
 
-### Lab environment
-- **Target**: [Metasploitable 2](https://sourceforge.net/projects/metasploitable/) in VirtualBox
-- **Network**: Host-only adapter (e.g. `192.168.56.0/24`)
-- **Metasploit RPC daemon** (for exploitation phase):
-  ```bash
-  msfrpcd -P yourpassword -S -a 127.0.0.1
-  ```
+### Target Environment
+- **Target**: Ensure you have explicit permission to test the target
+- **Reachability**: Target must be reachable by your host machine
 
 ---
 
@@ -91,7 +85,7 @@ pip install -e .
 
 # 4. Configure environment
 cp .env.example .env
-# Edit .env — add your OPENROUTER_API_KEY and MSF_RPC_PASSWORD
+# Edit .env — add your OPENROUTER_API_KEY
 
 # 5. Verify installation
 spider --help
@@ -107,11 +101,6 @@ Edit `.env` with your settings:
 # OpenRouter (required)
 OPENROUTER_API_KEY="your_key_here"
 OPENROUTER_MODEL="qwen/qwen3-coder:free"
-
-# Metasploit RPC (required for exploitation phase)
-MSF_RPC_HOST="127.0.0.1"
-MSF_RPC_PORT="55553"
-MSF_RPC_PASSWORD="yourmsfrpcpassword"
 
 # Output paths
 SPIDER_DB_PATH="./spider_state.db"
@@ -158,68 +147,6 @@ spider clean --target 192.168.56.101
 
 ---
 
-## 📊 Example Output
-
-### Terminal (Rich UI)
-
-```
-  ███████╗██████╗ ██╗██████╗ ███████╗██████╗
-  ...
-  System for Penetration Testing, Intelligence, Discovery, Exploit & Recon
-  Version 1.0.0  |  Target: 192.168.56.101
-
-14:32:01 [SYSTEM] Running pre-flight checks...
-┌──────────────────────────────────────────┐
-│  Pre-Flight Checks                       │
-├──────────────────────┬────────┬──────────┤
-│  nmap                │ ✓ PASS │ 7.94     │
-│  gobuster            │ ✓ PASS │ found    │
-│  nikto               │ ✓ PASS │ found    │
-│  OpenRouter API key  │ ✓ PASS │ ...abc12 │
-│  Target reachable    │ ✓ PASS │ ping OK  │
-│  msfrpcd             │ ✓ PASS │ 127.0.0.1│
-└──────────────────────┴────────┴──────────┘
-
-╭─ ORCHESTRATOR ─────────────────────────────╮
-│ Round 1                                    │
-│ >> Next Agent: RECON                       │
-│ Reasoning: No port data. Must scan first.  │
-╰────────────────────────────────────────────╯
-
-14:32:02 [RECON] Starting nmap scan against 192.168.56.101...
-⠸ nmap -sV -sC 192.168.56.101...  0:02:21
-
-Recon Results — 23 Open Ports
-┌──────┬───────┬─────────────┬─────────────────────┐
-│ Port │ Proto │ Service     │ Version             │
-├──────┼───────┼─────────────┼─────────────────────┤
-│   21 │ tcp   │ ftp         │ vsftpd 2.3.4        │
-│   22 │ tcp   │ ssh         │ OpenSSH 4.7p1       │
-│   80 │ tcp   │ http        │ Apache 2.2.8        │
-│  139 │ tcp   │ netbios-ssn │ Samba smbd 3.X      │
-│  445 │ tcp   │ microsoft-ds│ Samba smbd 3.X      │
-└──────┴───────┴─────────────┴─────────────────────┘
-
-...
-
->> EXPLOIT SUCCESS — Session ID: 1
-Report: ./reports/2026-04-17_1200_192-168-56-101.pdf
-```
-
-### Generated Report
-
-The HTML/PDF report includes:
-- Cover page with severity summary
-- Executive summary (LLM-generated)
-- Full attack chain timeline
-- Open ports table
-- Finding cards with CVSS, CVE, ATT&CK TTP
-- Credentials harvested
-- Privilege escalation paths
-- MITRE ATT&CK mapping table
-
----
-
 ## 🗄️ Database Structure
 
 SQLite (`spider_state.db`) stores all pentest data:
@@ -229,7 +156,7 @@ SQLite (`spider_state.db`) stores all pentest data:
 | `runs`         | Engagement runs (one per target/run)  |
 | `open_ports`   | nmap scan results                     |
 | `findings`     | Vulnerability findings with CVE/CVSS  |
-| `sessions`     | Metasploit sessions opened            |
+| `sessions`     | Reverse shells / sessions opened      |
 | `privesc_vectors` | Privilege escalation paths         |
 | `credentials`  | Harvested credentials                 |
 
@@ -259,21 +186,9 @@ pytest tests/ -v --cov=spider --cov-report=term-missing
 | CLI | Click 8.1.8 |
 | Terminal UI | Rich 13.9.4 |
 | Database | SQLite + SQLAlchemy 2.0 |
-| Metasploit | pymetasploit3 1.0.3 |
 | Report HTML | Jinja2 3.1.4 |
 | Report PDF | weasyprint 62.3 |
 | nmap parsing | python-libnmap 0.7.3 |
-
----
-
-## 🗺️ Roadmap
-
-- [ ] Shodan integration in Recon Agent
-- [ ] Multiple target support (CIDR ranges)
-- [ ] Flask web dashboard (live agent activity)
-- [ ] Docker container for portable deployment
-- [ ] BloodHound AD integration
-- [ ] Ollama fallback (local LLM, no API key required)
 
 ---
 
