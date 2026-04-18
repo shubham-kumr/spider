@@ -36,7 +36,7 @@ def _interpret_with_llm(tool_name: str, target_ip: str, port: int, raw_output: s
     )
 
     try:
-        result = call_qwen_json(ENUM_INTERPRETATION_SYSTEM_PROMPT, user_prompt, max_tokens=1500)
+        result = call_qwen_json(ENUM_INTERPRETATION_SYSTEM_PROMPT, user_prompt, max_tokens=4000)
         if isinstance(result, list):
             return result
         if isinstance(result, dict):

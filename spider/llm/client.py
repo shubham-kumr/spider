@@ -113,7 +113,8 @@ def call_qwen(
                     break  # Break inner loop on hard 4xx/5xx errors
 
                 data = resp.json()
-                return data["choices"][0]["message"]["content"].strip()
+                content = data["choices"][0]["message"].get("content")
+                return content.strip() if content else ""
 
             except requests.exceptions.Timeout:
                 last_error = "Timeout"
