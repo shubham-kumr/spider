@@ -1,6 +1,7 @@
 """
 SPIDER — LLM Client
-Uses the openai SDK pointed at OpenRouter's API (recommended integration path).
+Direct httpx POST to OpenRouter with an explicit Authorization: Bearer header.
+No SDK auth magic — what you set is exactly what gets sent.
 Includes exponential backoff for the 8 RPM free-tier rate limit.
 """
 
@@ -11,37 +12,26 @@ import re
 import time
 
 import httpx
-from openai import OpenAI, RateLimitError
 
 from spider.config import (
     OPENROUTER_API_KEY,
-    OPENROUTER_BASE_URL,
     OPENROUTER_MODEL,
     LLM_MAX_TOKENS,
 )
 
-# Lazy singleton — created once and reused
-_client: OpenAI | None = None
+_OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 
 
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        if not OPENROUTER_API_KEY:
-            raise RuntimeError(
-                "OPENROUTER_API_KEY is not set. "
-                "Add it to your .env file: OPENROUTER_API_KEY=\"sk-or-v1-...\""
-            )
-        _client = OpenAI(
-            api_key=OPENROUTER_API_KEY,
-            base_url=OPENROUTER_BASE_URL,
-            http_client=httpx.Client(),
-            default_headers={
-                "HTTP-Referer": "https://github.com/spider-framework/spider",
-                "X-Title": "SPIDER Pentest Framework",
-            },
+def _validate_key() -> str:
+    """Return the API key or raise a clear error before any network call."""
+    key = OPENROUTER_API_KEY.strip()
+    if not key or key.startswith("your_"):
+        raise RuntimeError(
+            "OPENROUTER_API_KEY is missing or still set to the placeholder.\n"
+            "  1. Get your key at https://openrouter.ai/keys\n"
+            "  2. Set it in .env:  OPENROUTER_API_KEY=\"sk-or-v1-...\""
         )
-    return _client
+    return key
 
 
 def call_qwen(
@@ -51,30 +41,53 @@ def call_qwen(
     temperature: float = 0.1,
 ) -> str:
     """
-    Call Qwen via OpenRouter with exponential backoff on rate limits.
-    Returns the raw text response (may be JSON or prose).
+    POST directly to OpenRouter using httpx with an explicit Authorization header.
+    Retries up to 4 times with exponential backoff on 429 rate-limit responses.
     """
+    api_key = _validate_key()
     max_tokens = max_tokens or LLM_MAX_TOKENS
-    client = _get_client()
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/spider-framework/spider",
+        "X-Title": "SPIDER Pentest Framework",
+    }
+    payload = {
+        "model": OPENROUTER_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": user_prompt},
+        ],
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
 
     for attempt in range(5):
         try:
-            response = client.chat.completions.create(
-                model=OPENROUTER_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=max_tokens,
-                temperature=temperature,
+            resp = httpx.post(
+                _OPENROUTER_ENDPOINT,
+                headers=headers,
+                json=payload,
+                timeout=120,
             )
-            return response.choices[0].message.content.strip()
-        except RateLimitError as e:
-            if attempt < 4:
-                # OpenRouter free tier: 8 RPM — wait long enough for bucket to reset
+
+            if resp.status_code == 429:
                 wait_time = 10 * (2 ** attempt)  # 10s, 20s, 40s, 80s
-                print(f"[!] Rate limit hit. Waiting {wait_time}s before retry {attempt + 1}/4... ({e})")
+                print(f"[!] Rate limit hit (429). Waiting {wait_time}s before retry {attempt + 1}/4...")
                 time.sleep(wait_time)
+                continue
+
+            if resp.status_code != 200:
+                raise RuntimeError(f"OpenRouter error {resp.status_code}: {resp.text}")
+
+            data = resp.json()
+            return data["choices"][0]["message"]["content"].strip()
+
+        except httpx.TimeoutException:
+            if attempt < 4:
+                print(f"[!] Request timed out. Retrying ({attempt + 1}/4)...")
+                time.sleep(5)
                 continue
             raise
 
