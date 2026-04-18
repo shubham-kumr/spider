@@ -63,13 +63,7 @@ def call_qwen(
     session = _get_session()
     max_tokens = max_tokens or LLM_MAX_TOKENS
 
-    models_to_try = []
-    if OPENROUTER_MODEL not in models_to_try:
-        models_to_try.append(OPENROUTER_MODEL)
-    
-    fallback = "qwen/qwen3-next-80b-a3b-instruct:free"
-    if fallback not in models_to_try:
-        models_to_try.append(fallback)
+    models_to_try = [OPENROUTER_MODEL]
 
     payload = {
         "messages": [
