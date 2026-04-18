@@ -1,9 +1,3 @@
-# SPIDER 🕷️
-
-**System for Pentesting, Initial Discovery, Exploitation & Reconnaissance**
-
----
-
 ```
   ███████╗██████╗ ██╗██████╗ ███████╗██████╗
   ██╔════╝██╔══██╗██║██╔══██╗██╔════╝██╔══██╗
@@ -13,7 +7,10 @@
   ╚══════╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝
 ```
 
-SPIDER is an **AI-driven multi-agent offensive security framework** that automates the full penetration testing kill chain — from recon to report — using a **LangGraph** pipeline of specialized agents powered by **Qwen3 Coder (free tier via OpenRouter)**.
+**System for Pentesting, Initial Discovery, Exploitation & Reconnaissance - SPIDER**
+
+
+**SPIDER** is an **AI-driven multi-agent offensive security framework** that automates the full penetration testing kill chain — from recon to report — using a **LangGraph** pipeline of specialized agents powered by **Qwen3 Coder (free tier via OpenRouter)**.
 
 ---
 
