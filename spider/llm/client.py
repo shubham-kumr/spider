@@ -8,37 +8,13 @@ from __future__ import annotations
 import json
 import re
 import time
-import httpx
-
-from openai import OpenAI, RateLimitError
+from openrouter import OpenRouter
 
 from spider.config import (
     OPENROUTER_API_KEY,
-    OPENROUTER_BASE_URL,
     OPENROUTER_MODEL,
     LLM_MAX_TOKENS,
 )
-
-# Lazy singleton — instantiated on first use
-_client: OpenAI | None = None
-
-
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        # Creating a custom httpx.Client bypasses proxy issues
-        # in legacy openai wrappers where 'proxies' kwarg errors occur.
-        http_client = httpx.Client()
-        _client = OpenAI(
-            api_key=OPENROUTER_API_KEY,
-            base_url=OPENROUTER_BASE_URL,
-            http_client=http_client,
-            default_headers={
-                "HTTP-Referer": "https://github.com/spider-framework/spider",
-                "X-OpenRouter-Title": "SPIDER Pentest Framework"
-            }
-        )
-    return _client
 
 
 def call_qwen(
@@ -52,30 +28,31 @@ def call_qwen(
     Returns the raw text response (may be JSON or prose).
     """
     max_tokens = max_tokens or LLM_MAX_TOKENS
-    client = _get_client()
 
-    for attempt in range(4):
+    for attempt in range(5):
         try:
-            response = client.chat.completions.create(
-                model=OPENROUTER_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
-            return response.choices[0].message.content.strip()
-        except RateLimitError:
-            if attempt < 3:
-                wait = 2 ** attempt  # 1s, 2s, 4s
-                time.sleep(wait)
+            with OpenRouter(
+                api_key=OPENROUTER_API_KEY,
+            ) as client:
+                response = client.chat.send(
+                    model=OPENROUTER_MODEL,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ]
+                )
+                return response.choices[0].message.content.strip()
+        except Exception as e:
+            err_str = str(e).lower()
+            if attempt < 4 and ("429" in err_str or "rate limit" in err_str):
+                # OpenRouter free tier limits are often 8 RPM
+                wait_time = 10 * (2 ** attempt)  # 10s, 20s, 40s, 80s
+                print(f"[!] OpenRouter Rate Limit Exceeded. Waiting {wait_time}s before retry {attempt+1}... ({e})")
+                time.sleep(wait_time)
                 continue
             raise
-        except Exception:
-            raise
 
-    raise RuntimeError("LLM call failed after 4 retries")
+    raise RuntimeError("LLM call failed after 5 retries")
 
 
 def call_qwen_json(

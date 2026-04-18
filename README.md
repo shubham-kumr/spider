@@ -15,7 +15,7 @@
   ╚══════╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝
 ```
 
-SPIDER is an **AI-driven multi-agent offensive security framework** that automates the full penetration testing kill chain — from recon to report — using a **LangGraph** pipeline of specialized agents powered by **Qwen2.5 (free tier via Together AI)**.
+SPIDER is an **AI-driven multi-agent offensive security framework** that automates the full penetration testing kill chain — from recon to report — using a **LangGraph** pipeline of specialized agents powered by **Qwen3 Coder (free tier via OpenRouter)**.
 
 ---
 
@@ -60,9 +60,9 @@ SPIDER is an **AI-driven multi-agent offensive security framework** that automat
   ```
 
 ### Accounts
-- **Together AI** (free tier) — [Sign up here](https://api.together.ai/signup)
+- **OpenRouter** (free tier) — [Sign up here](https://openrouter.ai/)
   - Get your API key from the dashboard
-  - Free tier: 10M tokens/month — sufficient for SPIDER
+  - Free tier usage includes strict rate limits (up to 8 requests/min), which SPIDER automatically handles with retry logic.
 
 ### Lab environment
 - **Target**: [Metasploitable 2](https://sourceforge.net/projects/metasploitable/) in VirtualBox
@@ -91,7 +91,7 @@ pip install -e .
 
 # 4. Configure environment
 cp .env.example .env
-# Edit .env — add your TOGETHER_API_KEY and MSF_RPC_PASSWORD
+# Edit .env — add your OPENROUTER_API_KEY and MSF_RPC_PASSWORD
 
 # 5. Verify installation
 spider --help
@@ -104,9 +104,9 @@ spider --help
 Edit `.env` with your settings:
 
 ```bash
-# Together AI (required)
-TOGETHER_API_KEY="your_key_here"
-TOGETHER_MODEL="Qwen/Qwen2.5-72B-Instruct-Turbo"
+# OpenRouter (required)
+OPENROUTER_API_KEY="your_key_here"
+OPENROUTER_MODEL="qwen/qwen3-coder:free"
 
 # Metasploit RPC (required for exploitation phase)
 MSF_RPC_HOST="127.0.0.1"
@@ -175,7 +175,7 @@ spider clean --target 192.168.56.101
 │  nmap                │ ✓ PASS │ 7.94     │
 │  gobuster            │ ✓ PASS │ found    │
 │  nikto               │ ✓ PASS │ found    │
-│  Together AI API key │ ✓ PASS │ ...abc12 │
+│  OpenRouter API key  │ ✓ PASS │ ...abc12 │
 │  Target reachable    │ ✓ PASS │ ping OK  │
 │  msfrpcd             │ ✓ PASS │ 127.0.0.1│
 └──────────────────────┴────────┴──────────┘
@@ -255,7 +255,7 @@ pytest tests/ -v --cov=spider --cov-report=term-missing
 | Component | Technology |
 |-----------|-----------|
 | Agent Framework | LangGraph 0.2.28 |
-| LLM | Qwen2.5-72B-Instruct-Turbo (Together AI) |
+| LLM | Qwen3 Coder (OpenRouter) |
 | CLI | Click 8.1.8 |
 | Terminal UI | Rich 13.9.4 |
 | Database | SQLite + SQLAlchemy 2.0 |
