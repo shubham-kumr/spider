@@ -1,6 +1,6 @@
 """
-SPIDER — LLM Client (Together AI / Qwen)
-OpenAI-compatible client pointed at Together AI with exponential backoff on rate limits.
+SPIDER — LLM Client
+OpenRouter client (Qwen3 Coder) with exponential backoff on rate limits.
 """
 
 from __future__ import annotations
@@ -24,9 +24,14 @@ def call_qwen(
     temperature: float = 0.1,
 ) -> str:
     """
-    Call Qwen via OpenRouter AI with exponential backoff on rate limits.
+    Call Qwen via OpenRouter with exponential backoff on rate limits.
     Returns the raw text response (may be JSON or prose).
     """
+    if not OPENROUTER_API_KEY:
+        raise RuntimeError(
+            "OPENROUTER_API_KEY is not set. "
+            "Add it to your .env file: OPENROUTER_API_KEY=\"sk-or-v1-...\""
+        )
     max_tokens = max_tokens or LLM_MAX_TOKENS
 
     for attempt in range(5):
