@@ -25,6 +25,8 @@ _OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 def _validate_key() -> str:
     """Return the API key or raise a clear error before any network call."""
     key = OPENROUTER_API_KEY.strip()
+    # Debug: confirm what key is loaded (safe — only shows length + first 10 chars)
+    print(f"[DEBUG] OPENROUTER_API_KEY: len={len(key)}, prefix={key[:10]!r}")
     if not key or key.startswith("your_"):
         raise RuntimeError(
             "OPENROUTER_API_KEY is missing or still set to the placeholder.\n"
