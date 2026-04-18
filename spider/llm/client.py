@@ -1,7 +1,6 @@
 """
 SPIDER — LLM Client
-Direct httpx POST to OpenRouter with an explicit Authorization: Bearer header.
-No SDK auth magic — what you set is exactly what gets sent.
+Direct requests.post to OpenRouter with explicit Authorization: Bearer header.
 Includes exponential backoff for the 8 RPM free-tier rate limit.
 """
 
@@ -11,7 +10,7 @@ import json
 import re
 import time
 
-import httpx
+import requests
 
 from spider.config import (
     OPENROUTER_API_KEY,
@@ -21,19 +20,33 @@ from spider.config import (
 
 _OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 
+# Reusable session for connection pooling
+_session: requests.Session | None = None
 
-def _validate_key() -> str:
-    """Return the API key or raise a clear error before any network call."""
-    key = OPENROUTER_API_KEY.strip()
-    # Debug: confirm what key is loaded (safe — only shows length + first 10 chars)
-    print(f"[DEBUG] OPENROUTER_API_KEY: len={len(key)}, prefix={key[:10]!r}")
-    if not key or key.startswith("your_"):
-        raise RuntimeError(
-            "OPENROUTER_API_KEY is missing or still set to the placeholder.\n"
-            "  1. Get your key at https://openrouter.ai/keys\n"
-            "  2. Set it in .env:  OPENROUTER_API_KEY=\"sk-or-v1-...\""
-        )
-    return key
+
+def _get_session() -> requests.Session:
+    """Create or return a persistent requests.Session with auth headers."""
+    global _session
+    if _session is None:
+        key = OPENROUTER_API_KEY.strip()
+        print(f"[DEBUG] OPENROUTER_API_KEY: len={len(key)}, prefix={key[:10]!r}")
+        if not key or key.startswith("your_"):
+            raise RuntimeError(
+                "OPENROUTER_API_KEY is missing or still set to the placeholder.\n"
+                "  1. Get your key at https://openrouter.ai/keys\n"
+                "  2. Set it in .env:  OPENROUTER_API_KEY=\"sk-or-v1-...\""
+            )
+        _session = requests.Session()
+        _session.headers.update({
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/spider-framework/spider",
+            "X-Title": "SPIDER Pentest Framework",
+        })
+        # Debug: confirm the exact header value (masked)
+        auth_header = _session.headers.get("Authorization", "")
+        print(f"[DEBUG] Authorization header set: {auth_header[:20]}...{auth_header[-6:]}")
+    return _session
 
 
 def call_qwen(
@@ -43,18 +56,12 @@ def call_qwen(
     temperature: float = 0.1,
 ) -> str:
     """
-    POST directly to OpenRouter using httpx with an explicit Authorization header.
+    POST to OpenRouter using requests with an explicit Authorization header.
     Retries up to 4 times with exponential backoff on 429 rate-limit responses.
     """
-    api_key = _validate_key()
+    session = _get_session()
     max_tokens = max_tokens or LLM_MAX_TOKENS
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/spider-framework/spider",
-        "X-Title": "SPIDER Pentest Framework",
-    }
     payload = {
         "model": OPENROUTER_MODEL,
         "messages": [
@@ -67,9 +74,8 @@ def call_qwen(
 
     for attempt in range(5):
         try:
-            resp = httpx.post(
+            resp = session.post(
                 _OPENROUTER_ENDPOINT,
-                headers=headers,
                 json=payload,
                 timeout=120,
             )
@@ -81,12 +87,14 @@ def call_qwen(
                 continue
 
             if resp.status_code != 200:
+                # Dump actual request headers for debugging
+                print(f"[DEBUG] Request headers sent: { {k: (v[:20]+'...' if len(v)>20 else v) for k,v in resp.request.headers.items()} }")
                 raise RuntimeError(f"OpenRouter error {resp.status_code}: {resp.text}")
 
             data = resp.json()
             return data["choices"][0]["message"]["content"].strip()
 
-        except httpx.TimeoutException:
+        except requests.exceptions.Timeout:
             if attempt < 4:
                 print(f"[!] Request timed out. Retrying ({attempt + 1}/4)...")
                 time.sleep(5)
