@@ -1,7 +1,7 @@
 # Core dependencies — Python 3.11+ / 3.12+ compatible
 langgraph>=0.2.28
 langchain-core>=0.3.15
-openrouter>=0.9.1
+openai>=1.51.0
 sqlalchemy>=2.0.36
 rich>=13.9.4
 click>=8.1.8
